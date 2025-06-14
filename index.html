@@ -495,7 +495,8 @@
         entryWrapper.appendChild(entryEl);
         diaryContainer.appendChild(entryWrapper);
         
-        entryWrapper.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        // POPRAWKA: Usunięto automatyczne przewijanie
+        // entryWrapper.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
         typewriter(dayEl, newEntryData.day, 50, () => {
             typewriter(entryEl, newEntryData.entry, 60, () => {
