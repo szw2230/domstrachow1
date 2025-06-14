@@ -22,6 +22,14 @@
       background-size: cover;
       color: #fff;
       padding: 20px;
+      transition: filter 1s ease-in-out; /* Dla efektu finałowego */
+    }
+    
+    body.final-stage {
+      filter: invert(1);
+    }
+    body.final-stage .nav-buttons {
+      filter: invert(1); /* Odwróć przyciski z powrotem, by były czytelne */
     }
 
     ::-webkit-scrollbar {
@@ -341,19 +349,19 @@
     <h2>Znaleziony Dziennik</h2>
     <div class="container">
       <div id="dziennik-container" class="new-box" style="max-width: 800px; text-align: left; font-style: italic;">
-        </div>
+      </div>
     </div>
   </section>
 
   <footer>© 2025 Dom Strachów. Wszelkie prawa zastrzeżone.</footer>
 
   <script>
+    // --- PODSTAWOWE SKRYPTY STRONY (BEZ ZMIAN) ---
     const audio = document.getElementById('muzyka');
     audio.volume = 0.1;
     window.addEventListener('click', () => { if (audio.muted) { audio.muted = false; audio.play().catch(() => {}); } });
     function przyciszMuzyke() { audio.volume = 0; }
     function odtworzMuzyke() { audio.volume = 0.1; }
-    function scrollToSection(id) { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
     const images = ['galeria1.jpg','galeria2.jpg','galeria3.jpg','galeria4.jpg','galeria5.jpg'];
     let currentIndex = 0;
     function openGallery(index) {
@@ -363,6 +371,7 @@
       img.src = images[currentIndex];
       overlay.classList.add('flickering');
       overlay.style.display = 'flex';
+      updateFearScore(3); // Zwiększ Poziom Strachu
     }
     function closeGallery(e) { if (e.target.id === 'galleryOverlay') { const overlay = document.getElementById('galleryOverlay'); overlay.style.display = 'none'; overlay.classList.remove('flickering'); } }
     function nextImage(e) { e.stopPropagation(); currentIndex = (currentIndex + 1) % images.length; document.getElementById('galleryImage').src = images[currentIndex]; }
@@ -376,78 +385,61 @@
       }
     });
     document.getElementById('galleryOverlay').addEventListener('mousemove', function(e) { this.style.setProperty('--x', `${e.clientX}px`); this.style.setProperty('--y', `${e.clientY}px`); });
-    function triggerParanormalEvent() {
-      const tiles = document.querySelectorAll('.tile'); 
-      if (tiles.length > 0) {
-        const randomTile = tiles[Math.floor(Math.random() * tiles.length)];
-        randomTile.classList.add('shake-it');
-        setTimeout(() => { randomTile.classList.remove('shake-it'); }, 500); 
-      }
-      const randomDelay = Math.random() * 15000 + 10000;
-      setTimeout(triggerParanormalEvent, randomDelay);
-    }
-    setTimeout(triggerParanormalEvent, 8000);
     
-    // Nawiedzony tytuł karty
-    const originalTitle = document.title;
-    const scaryTitles = ["Patrzymy...", "Pomocy...", "Jesteś następny...", "Nie uciekniesz..."];
-    let isTabActive = true;
-    window.onfocus = () => { isTabActive = true; document.title = originalTitle; };
-    window.onblur = () => { isTabActive = false; };
-    setInterval(() => {
-      if (!isTabActive) { document.title = scaryTitles[Math.floor(Math.random() * scaryTitles.length)]; }
-    }, 5000);
+    // =================================================================
+    // --- NOWY SYSTEM "INTELIGENTNEGO HORRORU" ---
+    // =================================================================
 
-    // Losowe "opętanie" tekstu
-    const scaryReplacementTexts = ["Gdzie jesteś?", "Pomóż mi.", "Nie czytaj tego.", "Oni kłamią.", "To pułapka.", "Za tobą."];
-    let isTextCorrupted = false;
-    function corruptRandomText() {
-        if (isTextCorrupted) return;
-        const textElements = document.querySelectorAll('.tile p, .new-box p, .tile h3, header p');
-        const elementToCorrupt = textElements[Math.floor(Math.random() * textElements.length)];
-        const originalHTML = elementToCorrupt.innerHTML;
-        isTextCorrupted = true;
-        elementToCorrupt.classList.add('text-corrupted');
-        elementToCorrupt.style.opacity = '0';
-        setTimeout(() => {
-            elementToCorrupt.innerHTML = scaryReplacementTexts[Math.floor(Math.random() * scaryReplacementTexts.length)];
-            elementToCorrupt.style.opacity = '1';
-        }, 300);
-        setTimeout(() => {
-            elementToCorrupt.style.opacity = '0';
-            setTimeout(() => {
-                elementToCorrupt.innerHTML = originalHTML;
-                elementToCorrupt.classList.remove('text-corrupted');
-                elementToCorrupt.style.opacity = '1';
-                isTextCorrupted = false;
-            }, 300);
-        }, 3000);
+    let fearScore = 0;
+    let lastKnownSection = '';
+    let isFinalStage = false;
+
+    // --- 1. System Poziomu Strachu ---
+    function updateFearScore(points) {
+        if (isFinalStage) return;
+        fearScore += points;
+        console.log("Poziom Strachu:", fearScore); // Do testów, można usunąć
+
+        // Sprawdź, czy osiągnięto finałowy poziom
+        if (fearScore > 35) {
+            triggerFinalStage();
+        }
     }
-    function startTextCorruptionCycle() {
-      const corruptionInterval = Math.random() * 10000 + 8000;
-      setTimeout(() => { corruptRandomText(); startTextCorruptionCycle(); }, corruptionInterval);
+
+    // Zwiększaj strach za przewijanie do nowych sekcji
+    function scrollToSection(id) {
+      document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+      if (id !== lastKnownSection) {
+        updateFearScore(1);
+        lastKnownSection = id;
+      }
     }
-    startTextCorruptionCycle();
     
-    // Uniwersalna funkcja pisania na maszynie
+    // Zwiększaj strach z upływem czasu
+    setInterval(() => {
+        updateFearScore(2);
+    }, 30000); // Co 30 sekund
+
+    // --- 2. Zdarzenia zależne od Poziomu Strachu ---
+
+    // Uniwersalna funkcja pisania
     function typewriter(element, text, speed = 100, callback = () => {}) {
         element.textContent = '';
         let i = 0;
         const typingInterval = setInterval(() => {
-            if (i < text.length) {
-                element.textContent += text.charAt(i);
-                i++;
-            } else {
-                clearInterval(typingInterval);
-                callback();
-            }
+            if (i < text.length) { element.textContent += text.charAt(i); i++; } 
+            else { clearInterval(typingInterval); callback(); }
         }, speed);
     }
-
-    // "Żywy" tekst
+    
+    // Nawiedzony tekst
     const hauntedElement = document.getElementById('hauntedText');
     function triggerHauntedText() {
-        const phrases = ["Wiem, że tu jesteś.", "Słyszę twój oddech.", "Patrzę na ciebie.", "Zostań ze mną.", "Nie jesteś bezpieczny."];
+        let phrases = ["Wiem, że tu jesteś.", "Słyszę twój oddech.", "Patrzę na ciebie."];
+        // Faza 2: Bardziej osobiste teksty
+        if (fearScore > 15) {
+            phrases.push("Podoba ci się dziennik?", "Dlaczego wciąż tu jesteś?", "Widziałem cię w galerii.");
+        }
         const phrase = phrases[Math.floor(Math.random() * phrases.length)];
         hauntedElement.style.top = `${Math.random() * 80 + 10}%`;
         hauntedElement.style.left = `${Math.random() * 80 + 10}%`;
@@ -456,13 +448,84 @@
             setTimeout(() => { hauntedElement.style.opacity = '0'; }, 2000);
         });
     }
-    function startHauntedTextCycle() {
-        const textInterval = Math.random() * 20000 + 25000;
-        setTimeout(() => { triggerHauntedText(); startHauntedTextCycle(); }, textInterval);
-    }
-    startHauntedTextCycle();
 
-    // Dziennik Obłędu pisany na żywo
+    // Losowe trzęsienia
+    function triggerParanormalEvent() {
+      const tiles = document.querySelectorAll('.tile'); 
+      if (tiles.length > 0) {
+        const randomTile = tiles[Math.floor(Math.random() * tiles.length)];
+        randomTile.classList.add('shake-it');
+        setTimeout(() => { randomTile.classList.remove('shake-it'); }, 500); 
+      }
+    }
+
+    // Uproszczony skrypt dla oka
+    const hauntingEyeImg = document.getElementById('hauntingEye');
+    function showHauntingEye() {
+        if (!hauntingEyeImg) return;
+        const maxWidth = window.innerWidth - hauntingEyeImg.offsetWidth;
+        const maxHeight = window.innerHeight - hauntingEyeImg.offsetHeight;
+        hauntingEyeImg.style.left = `${Math.random() * maxWidth}px`;
+        hauntingEyeImg.style.top = `${Math.random() * maxHeight}px`;
+        hauntingEyeImg.style.opacity = '1';
+        const visibleDuration = Math.random() * 2000 + 4000;
+        setTimeout(() => { hauntingEyeImg.style.opacity = '0'; }, visibleDuration);
+    }
+
+    // --- 3. Główna pętla sterująca zdarzeniami ---
+    function horrorEngine() {
+        if(isFinalStage) return;
+
+        // Faza 1: Losowe zdarzenia
+        let baseInterval = 20000; // 20 sekund
+        // Faza 2: Zdarzenia stają się częstsze
+        if (fearScore > 15) {
+            baseInterval = 12000; // 12 sekund
+        }
+
+        const nextEventTimeout = Math.random() * 5000 + baseInterval;
+
+        setTimeout(() => {
+            const eventRoll = Math.random();
+            if (eventRoll > 0.6) {
+                triggerHauntedText();
+            } else if (eventRoll > 0.3) {
+                showHauntingEye();
+            } else {
+                triggerParanormalEvent();
+            }
+            horrorEngine(); // Zaplanuj kolejne zdarzenie
+        }, nextEventTimeout);
+    }
+    horrorEngine(); // Uruchom silnik horroru
+
+
+    // --- 4. Finałowa Wrogość ---
+    function triggerFinalStage() {
+        if(isFinalStage) return;
+        isFinalStage = true;
+        console.log("FINAŁ!");
+
+        // Zniknięcie kursora
+        document.body.style.cursor = 'none';
+        
+        // Inwersja kolorów
+        document.body.classList.add('final-stage');
+
+        // Zastąpienie wszystkich tekstów
+        const allTextElements = document.querySelectorAll('p, h1, h2, h3, h4, button');
+        allTextElements.forEach(el => {
+            // Zostaw przyciski nawigacji w spokoju, żeby nie psuć ich wyglądu
+            if(!el.parentElement.classList.contains('nav-buttons')) {
+                el.textContent = 'UCIEKAJ';
+            }
+        });
+    }
+
+
+    // --- POZOSTAŁE SKRYPTY (Dziennik, Czas) ---
+
+    // Dziennik Obłędu
     const diaryContainer = document.getElementById('dziennik-container');
     const diaryEntries = [
         { day: "Dzień 1", entry: "Dom jest stary, ale ma potencjał. Czasem trzeszczą podłogi, ale to normalne." },
@@ -476,28 +539,20 @@
     ];
     let diaryIntervalId = null;
     let currentDiaryIndex = -1;
-
     function showNextDiaryEntry() {
         currentDiaryIndex++;
         if (currentDiaryIndex >= diaryEntries.length) {
             clearInterval(diaryIntervalId);
             return;
         }
-
         const newEntryData = diaryEntries[currentDiaryIndex];
         const entryWrapper = document.createElement('div');
         entryWrapper.className = 'diary-entry';
-        
         const dayEl = document.createElement('h4');
         const entryEl = document.createElement('p');
-
         entryWrapper.appendChild(dayEl);
         entryWrapper.appendChild(entryEl);
         diaryContainer.appendChild(entryWrapper);
-        
-        // POPRAWKA: Usunięto automatyczne przewijanie
-        // entryWrapper.scrollIntoView({ behavior: 'smooth', block: 'end' });
-
         typewriter(dayEl, newEntryData.day, 50, () => {
             typewriter(entryEl, newEntryData.entry, 60, () => {
                 if (currentDiaryIndex === diaryEntries.length - 1) {
@@ -530,24 +585,6 @@
         }, 10000);
       }
     }, 120000);
-
-    // Uproszczony skrypt dla oka jako obrazu
-    const hauntingEyeImg = document.getElementById('hauntingEye');
-    function showHauntingEye() {
-        if (!hauntingEyeImg) return;
-        const maxWidth = window.innerWidth - hauntingEyeImg.offsetWidth;
-        const maxHeight = window.innerHeight - hauntingEyeImg.offsetHeight;
-        hauntingEyeImg.style.left = `${Math.random() * maxWidth}px`;
-        hauntingEyeImg.style.top = `${Math.random() * maxHeight}px`;
-        hauntingEyeImg.style.opacity = '1';
-        const visibleDuration = Math.random() * 2000 + 4000;
-        setTimeout(() => { hauntingEyeImg.style.opacity = '0'; }, visibleDuration);
-    }
-    function startEyeCycle() {
-        const eyeInterval = Math.random() * 20000 + 30000;
-        setTimeout(() => { showHauntingEye(); startEyeCycle(); }, eyeInterval);
-    }
-    startEyeCycle();
 
   </script>
 </body>
